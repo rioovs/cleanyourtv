@@ -20,6 +20,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
+import android.graphics.Outline;
 import android.graphics.Paint;
 import android.graphics.RadialGradient;
 import android.graphics.Rect;
@@ -57,6 +58,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.SoundEffectConstants;
 import android.view.ViewGroup;
+import android.view.ViewOutlineProvider;
 import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.animation.AnimationUtils;
@@ -168,6 +170,12 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private int wifiIcon;
     /** The pills have been filled in once; later resumes refresh them after the first frame. */
     private boolean pillsShown;
+    /** CCTV live preview panels (config.xml cctv_enabled); null when disabled or not yet inflated. */
+    private CctvPanel cctvGudang, cctvGarasi;
+    /** Whether the camera panels are shown. The Inputs dropdown's CCTV row flips this; it is kept per TV. */
+    private boolean cctvOn;
+    /** Where the CCTV on/off choice is kept, so it survives a reboot. */
+    private static final String CCTV_PREFS = "cctv";
     private TextView shamsiDate;
     private TextView stats;
     private List<RaceWeekend.Race> raceCalendar;
@@ -662,6 +670,23 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
         if (festive) applyFestiveSkin((TextView) btnInputs, (TextView) btnSettings);
 
+        // CCTV live preview: two camera cards, on when config.xml allows them and the overlay names
+        // the camera server. Without a server there is nothing to show, so the cards stay hidden.
+        if (getResources().getBoolean(R.bool.cctv_enabled) && !cfg.cctvHost.isEmpty()) {
+            android.widget.ImageView tvGudang = findViewById(R.id.cctvGudang);
+            android.widget.ImageView tvGarasi = findViewById(R.id.cctvGarasi);
+            if (tvGudang != null && tvGarasi != null) {
+                roundCctvCards();
+                cctvGudang = new CctvPanel(this, tvGudang, 1, 0, cfg.cctvHost, cfg.cctvUser, cfg.cctvPass);
+                cctvGarasi = new CctvPanel(this, tvGarasi, 2, 2500, cfg.cctvHost, cfg.cctvUser, cfg.cctvPass);
+                cctvOn = getSharedPreferences(CCTV_PREFS, MODE_PRIVATE).getBoolean("on", true);
+                applyCctvVisibility();
+            }
+        } else {
+            View cctvPanels = findViewById(R.id.cctvPanels);
+            if (cctvPanels != null) cctvPanels.setVisibility(View.GONE);
+        }
+
         // Hide the glass when focus leaves the tiles.
         getWindow().getDecorView().getViewTreeObserver().addOnGlobalFocusChangeListener((oldF, newF) -> {
             boolean onTile = newF != null && newF.getId() == R.id.card;
@@ -780,6 +805,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
         updateClockVisibility();
         tileRefresh.onStart();
+        if (cctvOn) {
+            if (cctvGudang != null) cctvGudang.start();
+            if (cctvGarasi != null) cctvGarasi.start();
+        }
     }
 
     @Override
@@ -998,6 +1027,48 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (openPopup != null) openPopup.dismiss();
     }
 
+    /**
+     * Rounds the corners of the two camera cards. The cards sit on a rounded background, but a child
+     * picture is only clipped to it when the card clips to its outline, which has to be set here:
+     * the {@code clipToOutline} XML flag alone does not clip a ViewGroup's children on Android 11.
+     */
+    private void roundCctvCards() {
+        final float radius = 12 * density;
+        ViewOutlineProvider rounded = new ViewOutlineProvider() {
+            @Override
+            public void getOutline(View view, Outline outline) {
+                outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), radius);
+            }
+        };
+        for (int id : new int[]{R.id.cctvGudangCard, R.id.cctvGarasiCard}) {
+            View card = findViewById(id);
+            if (card == null) continue;
+            card.setOutlineProvider(rounded);
+            card.setClipToOutline(true);
+        }
+    }
+
+    /** Shows or hides the camera panels, and starts or stops the fetching with them. */
+    private void applyCctvVisibility() {
+        View panels = findViewById(R.id.cctvPanels);
+        if (panels == null) return;
+        panels.setVisibility(cctvOn ? View.VISIBLE : View.GONE);
+        if (cctvOn) {
+            if (cctvGudang != null) cctvGudang.start();
+            if (cctvGarasi != null) cctvGarasi.start();
+        } else {
+            if (cctvGudang != null) cctvGudang.release();
+            if (cctvGarasi != null) cctvGarasi.release();
+        }
+    }
+
+    /** The Inputs dropdown's CCTV row: flips the camera panels on or off and remembers the choice. */
+    private void toggleCctv() {
+        cctvOn = !cctvOn;
+        getSharedPreferences(CCTV_PREFS, MODE_PRIVATE).edit().putBoolean("on", cctvOn).apply();
+        applyCctvVisibility();
+    }
+
     @Override
     protected void onStop() {
         super.onStop();
@@ -1006,6 +1077,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         handler.removeCallbacks(clockCheck);
         stopped = true;
         tileRefresh.onStop();
+        if (cctvGudang != null) cctvGudang.release();
+        if (cctvGarasi != null) cctvGarasi.release();
     }
 
     /**
@@ -1046,6 +1119,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         super.onDestroy();
         unregisterReceiver(packageReceiver);
         wallpaperPlayer.close();
+        if (cctvGudang != null) cctvGudang.destroy();
+        if (cctvGarasi != null) cctvGarasi.destroy();
         ConnectivityManager cm = getSystemService(ConnectivityManager.class);
         TvInputManager tim = (TvInputManager) getSystemService(TV_INPUT_SERVICE);
         if (tim != null) tim.unregisterCallback(inputCallback);
@@ -2741,6 +2816,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             final Intent liveTvIntent = liveTv;
             addInputRow(rows, popup, R.drawable.ic_livetv, getString(R.string.live_tv), -1, () -> open(liveTvIntent));
         }
+        // The CCTV row: shows or hides the camera panels on Home. Only when the panels exist at all.
+        if (cctvGudang != null || cctvGarasi != null) {
+            if (rows.getChildCount() > 0) addSeparator(rows);
+            addCctvRow(rows, popup);
+        }
         if (rows.getChildCount() == 0) {
             Toast.makeText(this, R.string.no_inputs, Toast.LENGTH_SHORT).show();
             return;
@@ -2786,6 +2866,24 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         int m = (int) (6 * density), h = (int) (12 * density);
         lp.setMargins(h, m, h, m);
         rows.addView(line, lp);
+    }
+
+    /**
+     * The CCTV row in the Inputs dropdown: the camera pictures on Home are shown or hidden with it.
+     * The row keeps the dropdown open after the press, so the state can be read on the row itself.
+     */
+    private void addCctvRow(LinearLayout rows, PopupWindow popup) {
+        View row = getLayoutInflater().inflate(R.layout.item_input, rows, false);
+        ((ImageView) row.findViewById(R.id.icon)).setImageResource(R.drawable.ic_cctv);
+        ((TextView) row.findViewById(R.id.title)).setText(R.string.cctv);
+        TextView status = row.findViewById(R.id.status);
+        status.setText(cctvOn ? R.string.on : R.string.off);
+        row.findViewById(R.id.dot).setVisibility(View.GONE);
+        row.setOnClickListener(v -> {
+            toggleCctv();
+            status.setText(cctvOn ? R.string.on : R.string.off);
+        });
+        rows.addView(row);
     }
 
     private void addInputRow(LinearLayout rows, PopupWindow popup, int iconRes, String title, int state, Runnable action) {

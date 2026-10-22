@@ -9,6 +9,11 @@
     <string name="standby">Standby</string>
     <string name="not_connected">No device</string>
     <string name="live_tv">Live TV</string>
+    <!-- The camera panels on the home screen. CCTV is a brand-neutral acronym, not a word to translate. -->
+    <string name="cctv" translatable="false">CCTV</string>
+    <!-- Camera names, as the NVR labels them. Kept as typed so they match the NVR's own list. -->
+    <string name="cctv_gudang" translatable="false">GUDANG</string>
+    <string name="cctv_garasi" translatable="false">GARASI</string>
     <string name="no_inputs">No inputs found</string>
     <string name="good_morning">Good morning</string>
     <string name="good_afternoon">Good afternoon</string>

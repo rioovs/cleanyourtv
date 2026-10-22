@@ -10,6 +10,12 @@ backup/
 # session screenshots and working notes (may show the Wi-Fi name or account avatar) stay local
 shots/
 work/
+# this TV's own notes: they name the TV address and the NVR address
+TV-README.md
+# this TV's own scripts: they carry its address
+tools/restore-this-tv.sh
+tools/build-and-install-this-tv.sh
+tools/tv-mirror.sh
 # Perfetto traces from tools/trace.py: large, and they hold the TV's process list
 traces/
 .DS_Store

@@ -164,6 +164,7 @@
 
         <!-- No clipping down to the pills: with advanced effects a focused pill scales up past its row. -->
         <RelativeLayout
+            android:id="@+id/topRow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:clipChildren="false"
@@ -377,6 +378,98 @@
                 android:overScrollMode="never"
                 android:scrollbars="none"
                 android:descendantFocusability="afterDescendants" />
+        </FrameLayout>
+    </LinearLayout>
+
+    <!-- CCTV live preview: two camera pictures side by side in the free space at the top, over the
+         focused app's artwork. In Hebrew the header is on the right, so the cards go to the left.
+         cctv_enabled in config.xml turns the whole panel off. -->
+    <LinearLayout
+        android:id="@+id/cctvPanels"
+        android:layout_width="554dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:layout_marginTop="106dp"
+        android:layout_marginStart="56dp"
+        android:orientation="horizontal"
+        android:focusable="false"
+        android:importantForAccessibility="no">
+
+        <!-- One cinematic card per camera, the same shape as the Cinematic Video component: rounded
+             corners, the picture filling the card, a scrim at the bottom and the camera name in it. -->
+        <FrameLayout
+            android:id="@+id/cctvGudangCard"
+            android:layout_width="0dp"
+            android:layout_height="207dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="12dp"
+            android:background="@drawable/cctv_frame"
+            android:clipToOutline="true">
+
+            <ImageView
+                android:id="@+id/cctvGudang"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:contentDescription="@string/cctv_gudang" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="124dp"
+                android:layout_gravity="bottom"
+                android:background="@drawable/cctv_scrim" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|start"
+                android:layout_marginStart="14dp"
+                android:layout_marginBottom="10dp"
+                android:fontFamily="sans-serif-medium"
+                android:shadowColor="#99000000"
+                android:shadowDx="0"
+                android:shadowDy="1"
+                android:shadowRadius="6"
+                android:text="@string/cctv_gudang"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/cctvGarasiCard"
+            android:layout_width="0dp"
+            android:layout_height="207dp"
+            android:layout_weight="1"
+            android:background="@drawable/cctv_frame"
+            android:clipToOutline="true">
+
+            <ImageView
+                android:id="@+id/cctvGarasi"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:contentDescription="@string/cctv_garasi" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="124dp"
+                android:layout_gravity="bottom"
+                android:background="@drawable/cctv_scrim" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|start"
+                android:layout_marginStart="14dp"
+                android:layout_marginBottom="10dp"
+                android:fontFamily="sans-serif-medium"
+                android:shadowColor="#99000000"
+                android:shadowDx="0"
+                android:shadowDy="1"
+                android:shadowRadius="6"
+                android:text="@string/cctv_garasi"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp" />
         </FrameLayout>
     </LinearLayout>
 

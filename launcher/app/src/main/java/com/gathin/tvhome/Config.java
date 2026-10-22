@@ -169,6 +169,14 @@ final class Config {
     final boolean handleViewInputs;
     /** Hold OK on a tile opens a menu (Move, Remove from Home, App info) instead of App info (config.xml / theme tile_menu). */
     final boolean tileMenu;
+    /**
+     * The camera server for the CCTV cards on Home. The address and the login are build-time values
+     * from local.properties (see app/build.gradle), so they are never in the repository. Empty means
+     * no camera cards.
+     */
+    final String cctvHost;
+    final String cctvUser;
+    final String cctvPass;
 
     private Config(List<String> dockApps, boolean fillDock, List<String> hiddenApps, String liveTvPackage,
                    String liveTvAction, String liveTvInputId, Map<String, String> launchActions, Map<String, String> appLabels,
@@ -182,9 +190,13 @@ final class Config {
                    Festival festival, int[] inputKeycodes, List<String> appKeys, String stockHomeRedirect,
                    List<RaceWeekend.Race> raceCalendar, boolean cinematicHome, boolean ambientGlow, boolean appGlow, int homeIdleClockMinutes,
                    boolean keyFilter, boolean dockGlass, String glowStyle, boolean wallpaperCaptions,
-                   boolean handleViewInputs, boolean tileMenu) {
+                   boolean handleViewInputs, boolean tileMenu,
+                   String cctvHost, String cctvUser, String cctvPass) {
         this.handleViewInputs = handleViewInputs;
         this.tileMenu = tileMenu;
+        this.cctvHost = cctvHost;
+        this.cctvUser = cctvUser;
+        this.cctvPass = cctvPass;
         this.inputKeycodes = inputKeycodes;
         this.appKeys = Collections.unmodifiableList(appKeys);
         this.keyFilter = keyFilter;
@@ -326,6 +338,11 @@ final class Config {
         boolean dockGlass = res.getBoolean(R.bool.dock_glass);
         String glowStyle = res.getString(R.string.glow_style);
         boolean applied = false;
+        // The camera server comes from the build (local.properties), never from a theme: the address
+        // and the login are not something a theme may set.
+        String cctvHost = res.getString(R.string.cctv_host).trim();
+        String cctvUser = res.getString(R.string.cctv_user).trim();
+        String cctvPass = res.getString(R.string.cctv_pass);
 
         File dir = dir(ctx);
         File file = dir != null ? new File(dir, FILE_NAME) : null;
@@ -453,7 +470,8 @@ final class Config {
                 Math.max(0, Math.min(100, skyIntensity)), settingsKeycodes, settingsKeyPanel, restoreKeyServices, wallpaperEnabled, wallpaper,
                 wallpapers, rotationMinutes, wallpaperDim, dockOpacity, wallpaperOrder, applied,
                 festival, inputKeycodes, appKeys, stockHomeRedirect, json == null ? Collections.emptyList() : raceCalendar(json), cinematic, ambientGlow, appGlow,
-                Math.max(0, idleClockMinutes), keyFilter, dockGlass, glowStyle, wallpaperCaptions, handleViewInputs, tileMenu);
+                Math.max(0, idleClockMinutes), keyFilter, dockGlass, glowStyle, wallpaperCaptions, handleViewInputs, tileMenu,
+                cctvHost, cctvUser, cctvPass);
     }
 
     /**

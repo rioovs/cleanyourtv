@@ -2,6 +2,20 @@ plugins {
     id 'com.android.application'
 }
 
+// The camera server for the CCTV cards, read from local.properties (never committed: that file is
+// in .gitignore). Without the three keys the CCTV feature is off and no camera is contacted.
+//   cctv.host=192.168.1.50
+//   cctv.user=name
+//   cctv.pass=secret
+def cctv = new Properties()
+def cctvFile = rootProject.file('local.properties')
+if (cctvFile.exists()) {
+    cctvFile.withInputStream { cctv.load(it) }
+}
+def cctvHost = (cctv.getProperty('cctv.host') ?: '').trim()
+def cctvUser = (cctv.getProperty('cctv.user') ?: '').trim()
+def cctvPass = cctv.getProperty('cctv.pass') ?: ''
+
 android {
     namespace 'com.gathin.tvhome'
     compileSdk 34
@@ -13,6 +27,11 @@ android {
         targetSdk 34
         versionCode 7
         versionName '2.6'
+        // The camera address and its login are build-time values from local.properties, so nothing
+        // secret is in the repository. They end up in the APK, which is only ever sideloaded.
+        resValue 'string', 'cctv_host', cctvHost
+        resValue 'string', 'cctv_user', cctvUser
+        resValue 'string', 'cctv_pass', cctvPass
     }
 
     buildTypes {
