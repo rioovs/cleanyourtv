@@ -673,12 +673,12 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         // CCTV live preview: two camera cards, on when config.xml allows them and the overlay names
         // the camera server. Without a server there is nothing to show, so the cards stay hidden.
         if (getResources().getBoolean(R.bool.cctv_enabled) && !cfg.cctvHost.isEmpty()) {
-            android.widget.ImageView tvGudang = findViewById(R.id.cctvGudang);
-            android.widget.ImageView tvGarasi = findViewById(R.id.cctvGarasi);
+            android.view.TextureView tvGudang = findViewById(R.id.cctvGudang);
+            android.view.TextureView tvGarasi = findViewById(R.id.cctvGarasi);
             if (tvGudang != null && tvGarasi != null) {
                 roundCctvCards();
-                cctvGudang = new CctvPanel(this, tvGudang, 1, 0, cfg.cctvHost, cfg.cctvUser, cfg.cctvPass);
-                cctvGarasi = new CctvPanel(this, tvGarasi, 2, 2500, cfg.cctvHost, cfg.cctvUser, cfg.cctvPass);
+                cctvGudang = new CctvPanel(this, tvGudang, 2, cfg.cctvHost, cfg.cctvUser, cfg.cctvPass);
+                cctvGarasi = new CctvPanel(this, tvGarasi, 1, cfg.cctvHost, cfg.cctvUser, cfg.cctvPass);
                 cctvOn = getSharedPreferences(CCTV_PREFS, MODE_PRIVATE).getBoolean("on", true);
                 applyCctvVisibility();
             }
